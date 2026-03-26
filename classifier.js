@@ -52,11 +52,27 @@ Return ONLY valid JSON with NO markdown formatting. Use this exact structure:
   "ready_for_processing": true or false
 }`;
 }
+// Dynamic required columns based on workbook type
+const requiredColumnMap = {
+  employee_directory: ['Employee Name', 'Department', 'Start Date', 'Job Title', 'Email'],
+  sales_invoice_log: ['Invoice ID', 'Client Name', 'Total', 'Invoice Date', 'Status'],
+};
 
 function validateWorkbook(extracted, classification) {
   const issues = [];
 
-  const requiredColumns = ['Employee Name', 'Department', 'Start Date', 'Job Title', 'Email'];
+  // Normalise the workbook type to match map keys
+  const typeKey = classification.workbook_type
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+
+  // Look up required columns for this workbook type
+  const requiredColumns = requiredColumnMap[typeKey] || [];
+
+  if (requiredColumns.length === 0) {
+    issues.push(`Unknown workbook type "${classification.workbook_type}" — no required column rules defined`);
+  }
+
   requiredColumns.forEach(col => {
     if (!extracted.headers.includes(col)) {
       issues.push(`Missing required column: "${col}"`);
@@ -78,7 +94,37 @@ function validateWorkbook(extracted, classification) {
 
   return issues;
 }
+function logResult(filePath, result) {
+  const logFile = 'results.json';
+  
+  // Build the log entry
+  const entry = {
+    timestamp: new Date().toISOString(),
+    file: filePath,
+    workbook_type: result.workbook_type,
+    confidence: result.confidence,
+    ready_for_processing: result.ready_for_processing,
+    anomaly_count: result.anomalies.length,
+    anomalies: result.anomalies,
+    detected_fields: result.detected_fields,
+  };
 
+  // Load existing log or start fresh
+  let log = [];
+  if (fs.existsSync(logFile)) {
+    try {
+      log = JSON.parse(fs.readFileSync(logFile, 'utf8'));
+    } catch {
+      log = [];
+    }
+  }
+
+  // Append and save
+  log.push(entry);
+  fs.writeFileSync(logFile, JSON.stringify(log, null, 2));
+  
+  console.log(`📋 Result logged to ${logFile} (entry #${log.length})`);
+}
 async function classifyWorkbook(filePath) {
   try {
     console.log(`\n🚀 Starting Capsule Classifier`);
@@ -113,6 +159,7 @@ async function classifyWorkbook(filePath) {
       anomalies: [...(llmResult.anomalies || []), ...validationIssues],
       ready_for_processing: validationIssues.length === 0 && llmResult.confidence >= 0.85,
     };
+    logResult(filePath, finalResult);
 
     console.log(`\n✅ Classification complete!`);
     console.log('='.repeat(50));
@@ -134,4 +181,14 @@ classifyWorkbook(filePath).then(() => {
   console.log(`\n✨ Done!`);
 }).catch(console.error);
 
+// Export for use as a module
+module.exports = { classifyWorkbook };
+
+// Only run directly if called from terminal
+if (require.main === module) {
+  const filePath = process.argv[2] || 'sample.xlsx';
+  classifyWorkbook(filePath).then(() => {
+    console.log(`\n✨ Done!`);
+  }).catch(console.error);
+}
 

@@ -1,55 +1,16 @@
-# 📊 Capsule Classifier - AI-Powered Excel Workbook Analyzer
-![Node.js Version](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue)   
-![DeepSeek](https://img.shields.io/badge/DeepSeek-API-black)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
-An intelligent Excel workbook classifier that uses DeepSeek AI to automatically analyze and classify spreadsheet structures, detect data patterns, and identify anomalies.
+# Capsule Classifier
 
-## 🚀 Features
+Capsule Classifier analyzes Excel workbooks with DeepSeek and returns a structured JSON result.
 
-- **AI-Powered Analysis**: Leverages DeepSeek's language model to understand spreadsheet content
-- **Automatic Classification**: Identifies workbook types (employee directories, financial data, etc.)
-- **Anomaly Detection**: Spots missing values and unexpected data patterns
-- **Confidence Scoring**: Provides confidence levels for classifications
-- **Field Detection**: Automatically identifies key columns and their purposes
-- **Ready for Processing**: Determines if the workbook is structured enough for automated processing
+It supports:
+- File upload and classification through an HTTP API
+- Workbook classification from the command line
+- Deterministic validation for missing required columns and empty values
+- Persistent classification history in `results.json`
 
-## 🛠️ Tech Stack
+## What It Returns
 
-- **Node.js** - JavaScript runtime
-- **DeepSeek API** - AI language model for classification
-- **xlsx** - Excel file parsing
-- **dotenv** - Environment variable management
-
-## 📋 Prerequisites
-
-- Node.js (v14 or higher)
-- npm (Node Package Manager)
-- DeepSeek API key ([Get one here](https://platform.deepseek.com))
-
-## 🔧 Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/Ozprix/capsule-classifier.git
-cd capsule-classifier
-Install dependencies:
-
-```bash
-npm install
-Set up environment variables:
-
-```bash
-cp .env.example .env
-# Edit .env and add your DeepSeek API key
-Run the classifier:
-
-```bash
-node classifier.js
-# Or specify your own Excel file:
-node classifier.js your-file.xlsx
-📖 Usage
-The classifier analyzes Excel files and returns a JSON object with:
+The classifier returns this shape:
 
 ```json
 {
@@ -59,91 +20,117 @@ The classifier analyzes Excel files and returns a JSON object with:
   "anomalies": ["Empty value in row 5, column: \"Start Date\""],
   "ready_for_processing": false
 }
-Sample Output
+```
 
-## 🚀 Starting capsule classifier...
+## Prerequisites
 
-📁 Reading: sample.xlsx
-📊 Sheet: Employees
-📋 Headers: Employee Name, Department, Start Date, Job Title, Email
-📈 Total rows: 5
+- Node.js 18+
+- npm
+- DeepSeek API key
 
-🤖 Sending to DeepSeek API...
-✅ Classification complete!
+## Setup
 
-{
-  "workbook_type": "employee_directory",
-  "confidence": 0.95,
-  "detected_fields": [...],
-  "anomalies": [...],
-  "ready_for_processing": false
-}
-
-## 🏗️ Project Structure
-text
-capsule-classifier/
-├── classifier.js       # Main classification script
-├── package.json        # Dependencies and scripts
-├── .env.example        # Example environment variables
-├── .gitignore         # Git ignore rules
-└── README.md          # Project documentation
-
-## 🔑 Environment Variables
-Create a .env file with:
-
-env
-DEEPSEEK_API_KEY=your_api_key_here
-
-## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-Fork the repository
-
-Create your feature branch (git checkout -b feature/AmazingFeature)
-
-Commit your changes (git commit -m 'Add some AmazingFeature')
-
-Push to the branch (git push origin feature/AmazingFeature)
-
-Open a Pull Request
-
-## 📝 License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📧 Contact
-Michael -- michaelkwame.ad@gmail.com
-
-Project Link: https://github.com/Ozprix/capsule-classifier
-
-## Step 3: Create .env.example
+1. Clone the repository and enter the project directory:
 
 ```bash
-echo "DEEPSEEK_API_KEY=your_deepseek_api_key_here" > .env.example
-Step 4: Create a LICENSE file (MIT License)
-bash
-nano LICENSE
-Copy and paste:
+git clone https://github.com/Ozprix/capsule-classifier.git
+cd capsule-classifier
+```
 
-text
-MIT License
+2. Install dependencies:
 
-Copyright (c) 2026 Michael
+```bash
+npm install
+```
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+3. Create a `.env` file:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+```env
+DEEPSEEK_API_KEY=your_deepseek_api_key
+PORT=3000
+```
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+`PORT` is optional and defaults to `3000`.
 
+## Run the API Server
+
+Start the server:
+
+```bash
+node server.js
+```
+
+Available endpoints:
+- `GET /health` - service status
+- `POST /classify` - upload and classify one workbook
+- `GET /logs` - return entries stored in `results.json`
+
+### API Examples
+
+Classify an Excel file:
+
+```bash
+curl -X POST http://localhost:3000/classify \
+  -F "workbook=@sample.xlsx"
+```
+
+View classification logs:
+
+```bash
+curl http://localhost:3000/logs
+```
+
+## Run from CLI
+
+Classify the default sample file (`sample.xlsx`):
+
+```bash
+node classifier.js
+```
+
+Classify a specific file:
+
+```bash
+node classifier.js sales_report.xlsx
+```
+
+## Generate Sample Workbooks
+
+Create employee directory sample:
+
+```bash
+node createSample.js
+```
+
+Create sales report sample:
+
+```bash
+node createSalesReport.js
+```
+
+## Validation Rules
+
+After AI classification, additional checks run in code:
+- Required columns by workbook type
+- Empty cell detection across rows
+- Confidence threshold (`< 0.85` adds a review warning)
+
+`ready_for_processing` is only `true` when no validation issues exist and confidence is at least `0.85`.
+
+## Project Structure
+
+```text
+capsule-classifier/
+  classifier.js
+  createSample.js
+  createSalesReport.js
+  server.js
+  results.json
+  uploads/
+```
+
+## Notes
+
+- Uploaded files are stored temporarily in `uploads/` and deleted after classification.
+- Each classification is appended to `results.json`.
+- This project currently has no npm scripts configured; run files directly with `node`.

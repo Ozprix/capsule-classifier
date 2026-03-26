@@ -25,3 +25,4 @@ npm-debug.log*
 sample.xlsx
 *.xlsx
 !example.xlsx
+results.json
