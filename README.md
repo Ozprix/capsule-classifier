@@ -35,23 +35,23 @@ git clone https://github.com/Ozprix/capsule-classifier.git
 cd capsule-classifier
 Install dependencies:
 
-bash
+```bash
 npm install
 Set up environment variables:
 
-bash
+```bash
 cp .env.example .env
 # Edit .env and add your DeepSeek API key
 Run the classifier:
 
-bash
+```bash
 node classifier.js
 # Or specify your own Excel file:
 node classifier.js your-file.xlsx
 📖 Usage
 The classifier analyzes Excel files and returns a JSON object with:
 
-json
+```json
 {
   "workbook_type": "employee_directory",
   "confidence": 0.95,
