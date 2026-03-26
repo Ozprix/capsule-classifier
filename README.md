@@ -60,8 +60,8 @@ The classifier analyzes Excel files and returns a JSON object with:
   "ready_for_processing": false
 }
 Sample Output
-text
-🚀 Starting capsule classifier...
+
+## 🚀 Starting capsule classifier...
 
 📁 Reading: sample.xlsx
 📊 Sheet: Employees
@@ -78,7 +78,8 @@ text
   "anomalies": [...],
   "ready_for_processing": false
 }
-🏗️ Project Structure
+
+## 🏗️ Project Structure
 text
 capsule-classifier/
 ├── classifier.js       # Main classification script
@@ -86,12 +87,14 @@ capsule-classifier/
 ├── .env.example        # Example environment variables
 ├── .gitignore         # Git ignore rules
 └── README.md          # Project documentation
-🔑 Environment Variables
+
+## 🔑 Environment Variables
 Create a .env file with:
 
 env
 DEEPSEEK_API_KEY=your_api_key_here
-🤝 Contributing
+
+## 🤝 Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 Fork the repository
@@ -104,15 +107,13 @@ Push to the branch (git push origin feature/AmazingFeature)
 
 Open a Pull Request
 
-📝 License
+## 📝 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-📧 Contact
+## 📧 Contact
 Michael -- michaelkwame.ad@gmail.com
 
 Project Link: https://github.com/Ozprix/capsule-classifier
-
-text
 
 ## Step 3: Create .env.example
 
