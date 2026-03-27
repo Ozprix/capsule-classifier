@@ -62,7 +62,7 @@ app.post('/classify', upload.single('workbook'), async (req, res) => {
   console.log(`\n📥 Received file: ${req.file.originalname}`);
 
   try {
-    const result = await classifyWorkbook(filePath);
+    const result = await classifyWorkbook(filePath, req.file.originalname);
 
     // Clean up uploaded file after classification
     fs.unlinkSync(filePath);

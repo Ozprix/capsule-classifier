@@ -2,6 +2,7 @@ require('dotenv').config();
 const xlsx = require('xlsx');
 const OpenAI = require('openai');
 const fs = require('fs');
+const path = require('path');
 
 const openai = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY,
@@ -11,6 +12,11 @@ const openai = new OpenAI({
 function extractWorkbook(filePath) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`File not found: ${filePath}`);
+  }
+
+  const ext = path.extname(filePath).toLowerCase();
+  if (!['.xlsx', '.xls'].includes(ext)) {
+    throw new Error(`Invalid file type "${ext}" — only .xlsx and .xls are supported`);
   }
 
   const workbook = xlsx.readFile(filePath);
@@ -45,33 +51,54 @@ ${extracted.sampleRows.map(r => r.join(' | ')).join('\n')}
 
 Return ONLY valid JSON with NO markdown formatting. Use this exact structure:
 {
-  "workbook_type": "short label describing what this workbook contains",
+  "workbook_type": "snake_case label e.g. employee_directory", sales_invoice_log, project_tracker",
   "confidence": 0.0 to 1.0,
-  "detected_fields": ["list", "of", "key", "columns"],
+  "detected_fields": ["list", "of", "all", "columns", "found"],
+  "required_fields": ["list", "of", "columns", "that", "must", "not", "be", "empty"],
   "anomalies": ["any missing or unexpected things, or empty array"],
   "ready_for_processing": true or false
-}`;
+}
+
+For required_fields: identify which columns are essential for this type of workbook
+to be processable. For example an invoice needs Invoice ID and Total.
+A employee record needs at minimum a Name and an ID.`;
 }
 // Dynamic required columns based on workbook type
 const requiredColumnMap = {
   employee_directory: ['Employee Name', 'Department', 'Start Date', 'Job Title', 'Email'],
+  employee_records: ['EmployeeID', 'Name', 'Department', 'Monthly_Salary'],
   sales_invoice_log: ['Invoice ID', 'Client Name', 'Total', 'Invoice Date', 'Status'],
+  invoice_tracking: ['Invoice No', 'Customer', 'Total', 'Due Date', 'Paid'],
+  project_tracker: ['Project ID', 'Project Name', 'Owner', 'Status'],
 };
-
 function validateWorkbook(extracted, classification) {
   const issues = [];
 
-  // Normalise the workbook type to match map keys
   const typeKey = classification.workbook_type
     .toLowerCase()
-    .replace(/\s+/g, '_');
+    .trim()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
 
-  // Look up required columns for this workbook type
-  const requiredColumns = requiredColumnMap[typeKey] || [];
+  console.log(`🔍 Type key: "${typeKey}"`);
 
-  if (requiredColumns.length === 0) {
-    issues.push(`Unknown workbook type "${classification.workbook_type}" — no required column rules defined`);
+  // Always prefer LLM-suggested required fields if provided
+  // Fall back to static map only if LLM gave nothing
+  let requiredColumns = [];
+  let mode = '';
+
+  if (classification.required_fields && classification.required_fields.length > 0) {
+    requiredColumns = classification.required_fields;
+    mode = 'LLM dynamic';
+  } else if (requiredColumnMap[typeKey]) {
+    requiredColumns = requiredColumnMap[typeKey];
+    mode = 'static map';
+  } else {
+    issues.push(`Unknown workbook type "${classification.workbook_type}" — no rules defined`);
   }
+
+  console.log(`⚡ Validation mode: ${mode}`);
+  console.log(`   Required fields: ${requiredColumns.join(', ')}`);
 
   requiredColumns.forEach(col => {
     if (!extracted.headers.includes(col)) {
@@ -94,6 +121,7 @@ function validateWorkbook(extracted, classification) {
 
   return issues;
 }
+
 function logResult(filePath, result) {
   const logFile = 'results.json';
   
@@ -125,7 +153,7 @@ function logResult(filePath, result) {
   
   console.log(`📋 Result logged to ${logFile} (entry #${log.length})`);
 }
-async function classifyWorkbook(filePath) {
+async function classifyWorkbook(filePath, displayName = null) {
   try {
     console.log(`\n🚀 Starting Capsule Classifier`);
     console.log(`📁 Reading: ${filePath}`);
@@ -136,6 +164,7 @@ async function classifyWorkbook(filePath) {
     console.log(`📋 Headers: ${extracted.headers.join(', ')}`);
     console.log(`📈 Total rows: ${extracted.totalRows}`);
     console.log(`\n🤖 Sending to DeepSeek API...`);
+
 
     const response = await openai.chat.completions.create({
       model: 'deepseek-chat',
@@ -159,7 +188,7 @@ async function classifyWorkbook(filePath) {
       anomalies: [...(llmResult.anomalies || []), ...validationIssues],
       ready_for_processing: validationIssues.length === 0 && llmResult.confidence >= 0.85,
     };
-    logResult(filePath, finalResult);
+    logResult(displayName || filePath, finalResult);
 
     console.log(`\n✅ Classification complete!`);
     console.log('='.repeat(50));
@@ -176,19 +205,11 @@ async function classifyWorkbook(filePath) {
   }
 }
 
-const filePath = process.argv[2] || 'sample.xlsx';
-classifyWorkbook(filePath).then(() => {
-  console.log(`\n✨ Done!`);
-}).catch(console.error);
-
-// Export for use as a module
 module.exports = { classifyWorkbook };
 
-// Only run directly if called from terminal
 if (require.main === module) {
   const filePath = process.argv[2] || 'sample.xlsx';
   classifyWorkbook(filePath).then(() => {
     console.log(`\n✨ Done!`);
   }).catch(console.error);
 }
-
