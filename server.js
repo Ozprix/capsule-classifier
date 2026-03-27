@@ -38,7 +38,19 @@ const upload = multer({
     }
   },
 });
-
+app.get('/', (req, res) => {
+  res.json({
+    service: 'Capsule Classifier API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: 'GET /health',
+      classify: 'POST /classify — send Excel file as multipart/form-data with field name "workbook"',
+      logs: 'GET /logs',
+    },
+  });
+});
+t 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({

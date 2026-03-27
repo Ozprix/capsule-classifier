@@ -60,13 +60,20 @@ The app uses this provider configuration in code:
 
 ## Run the API Server
 
-Start the server:
+Start the server with npm:
+
+```bash
+npm start
+```
+
+Or run directly:
 
 ```bash
 node server.js
 ```
 
 Available endpoints:
+- `GET /` - API overview and endpoint listing
 - `GET /health` - service status
 - `POST /classify` - upload and classify one workbook
 - `GET /logs` - return entries stored in `results.json`
@@ -102,16 +109,34 @@ node classifier.js sales_report.xlsx
 
 ## Generate Sample Workbooks
 
-Create employee directory sample:
+Create an employee directory sample:
 
 ```bash
 node createSample.js
 ```
 
-Create sales report sample:
+Create a sales report sample:
 
 ```bash
 node createSalesReport.js
+```
+
+Create a project tracker sample:
+
+```bash
+node createProjectTracker.js
+```
+
+Create a messy/anomalous dataset for testing:
+
+```bash
+node createMessyData.js
+```
+
+Convert a CSV file to XLSX:
+
+```bash
+node csvToXlsx.js
 ```
 
 ## Validation Rules
@@ -136,8 +161,11 @@ Known fallback workbook types include:
 ```text
 capsule-classifier/
   classifier.js
+  createMessyData.js
+  createProjectTracker.js
   createSample.js
   createSalesReport.js
+  csvToXlsx.js
   server.js
   results.json
   uploads/
@@ -148,5 +176,3 @@ capsule-classifier/
 - Uploaded files are stored temporarily in `uploads/` and deleted after classification.
 - Each classification is appended to `results.json`.
 - API log entries store the original uploaded filename, while CLI runs store the path passed to `classifier.js`.
-- On model/API/parse failures, the API returns HTTP 500 and the CLI exits with an error.
-- This project currently has no npm scripts configured; run files directly with `node`.
