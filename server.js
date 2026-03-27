@@ -64,6 +64,10 @@ app.post('/classify', upload.single('workbook'), async (req, res) => {
   try {
     const result = await classifyWorkbook(filePath, req.file.originalname);
 
+    if (!result) {
+      throw new Error('Classification returned no result');
+    }
+
     // Clean up uploaded file after classification
     fs.unlinkSync(filePath);
 

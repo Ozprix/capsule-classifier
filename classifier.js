@@ -52,6 +52,7 @@ ${extracted.sampleRows.map(r => r.join(' | ')).join('\n')}
 Return ONLY valid JSON with NO markdown formatting. Use this exact structure:
 {
   "workbook_type": "snake_case label e.g. employee_directory", sales_invoice_log, project_tracker",
+  "description": "a short sentence describing what this workbook contains",
   "confidence": 0.0 to 1.0,
   "detected_fields": ["list", "of", "all", "columns", "found"],
   "required_fields": ["list", "of", "columns", "that", "must", "not", "be", "empty"],
@@ -202,6 +203,9 @@ async function classifyWorkbook(filePath, displayName = null) {
     if (error.response) {
       console.error('API response:', error.response.data);
     }
+
+    // Propagate errors so API and CLI callers can handle failure explicitly.
+    throw error;
   }
 }
 
